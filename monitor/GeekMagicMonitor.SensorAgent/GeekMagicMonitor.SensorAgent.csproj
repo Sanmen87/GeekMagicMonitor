@@ -1,0 +1,5 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup><OutputType>WinExe</OutputType><TargetFramework>net10.0-windows</TargetFramework><ApplicationManifest>..\GeekMagicMonitor\app.manifest</ApplicationManifest></PropertyGroup>
+  <ItemGroup><ProjectReference Include="..\GeekMagicMonitor.Core\GeekMagicMonitor.Core.csproj"/><PackageReference Include="LibreHardwareMonitorLib" Version="0.9.6"/></ItemGroup>
+  <ItemGroup><Compile Include="..\GeekMagicMonitor\Sensors.cs" Link="Sensors.cs"/><Compile Include="..\GeekMagicMonitor\SensorAgentLocation.cs" Link="SensorAgentLocation.cs"/></ItemGroup>
+</Project>

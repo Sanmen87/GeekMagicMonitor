@@ -1,0 +1,41 @@
+# Local history, downloads, tools and private diagnostics
+/.local/
+/reports/
+/upstream/
+/frimvare/
+/.venv/
+/.platformio/
+/.dotnet/
+/.dotnet-home/
+/.nuget/
+
+# Generated output and IDE files
+/artifacts/
+**/bin/
+**/obj/
+**/.pio/
+**/.vs/
+**/.vscode/
+**/__pycache__/
+*.pyc
+*.user
+*.suo
+*.log
+*.tmp
+*.bin
+*.bin.gz
+*.elf
+*.map
+*.zip
+*.7z
+*.exe
+*.msi
+
+# Per-device credentials and generated version
+/firmware/data/config.json
+/firmware/include/project_version.h
+.env
+.env.*
+!.env.example
+*.pem
+*.key

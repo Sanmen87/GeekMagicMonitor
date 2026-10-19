@@ -1,0 +1,1 @@
+<Project Sdk="Microsoft.NET.Sdk"><PropertyGroup><OutputType>Exe</OutputType></PropertyGroup><ItemGroup><ProjectReference Include="..\GeekMagicMonitor.Core\GeekMagicMonitor.Core.csproj"/><Compile Include="..\GeekMagicMonitor\Settings.cs" Link="Settings.cs"/></ItemGroup></Project>

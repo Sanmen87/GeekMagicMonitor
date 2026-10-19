@@ -1,0 +1,269 @@
+#include <ArduinoJson.h>
+#include <LittleFS.h>
+
+#include <Logger.h>
+#include "config/ConfigManager.h"
+
+ConfigManager::ConfigManager(const char* filename) : filename(filename) {}
+
+/**
+ * @brief Loads the configuration from a file stored in SPIFFS
+ *
+ * @return true if the configuration was successfully loaded and parsed false otherwise
+ */
+auto ConfigManager::load() -> bool {
+    if (!LittleFS.begin()) {
+        Logger::error("Failed to mount LittleFS", "ConfigManager");
+        return false;
+    }
+
+    File file = LittleFS.open(filename.c_str(), "r");
+    if (!file) {
+        Logger::error("Failed to open config file", "ConfigManager");
+        return false;
+    }
+
+    size_t size = file.size();
+    if (size == 0 || size > 4096) {
+        Logger::warn("Config file is empty", "ConfigManager");
+        file.close();
+        return false;
+    }
+
+    std::unique_ptr<char[]> buf(new char[size + 1]);
+    if (file.readBytes(buf.get(), size) != size) { file.close(); return false; }
+    buf[size] = '\0';
+    file.close();
+
+    JsonDocument doc;
+    DeserializationError error = deserializeJson(doc, buf.get());
+    if (error) {
+        Logger::error(("Failed to parse config file : " + String(error.c_str())).c_str(), "ConfigManager");
+        return false;
+    }
+
+    if (!doc.is<JsonObject>()) { return false; }
+    ssid = doc["wifi_ssid"] | "";
+    password = doc["wifi_password"] | "";
+
+    lcd_enable = doc["lcd_enable"] | lcd_enable;
+    lcd_w = doc["lcd_w"] | lcd_w;
+    lcd_h = doc["lcd_h"] | lcd_h;
+    lcd_rotation = doc["lcd_rotation"] | lcd_rotation;
+    lcd_mosi_gpio = doc["lcd_mosi_gpio"] | lcd_mosi_gpio;
+    lcd_sck_gpio = doc["lcd_sck_gpio"] | lcd_sck_gpio;
+    lcd_cs_gpio = doc["lcd_cs_gpio"] | lcd_cs_gpio;
+    lcd_dc_gpio = doc["lcd_dc_gpio"] | lcd_dc_gpio;
+    lcd_rst_gpio = doc["lcd_rst_gpio"] | lcd_rst_gpio;
+    lcd_cs_active_high = doc["lcd_cs_active_high"] | lcd_cs_active_high;
+    lcd_dc_cmd_high = doc["lcd_dc_cmd_high"] | lcd_dc_cmd_high;
+    lcd_spi_mode = doc["lcd_spi_mode"] | lcd_spi_mode;
+    lcd_keep_cs_asserted = doc["lcd_keep_cs_asserted"] | lcd_keep_cs_asserted;
+    lcd_spi_hz = doc["lcd_spi_hz"] | lcd_spi_hz;
+    lcd_backlight_gpio = doc["lcd_backlight_gpio"] | lcd_backlight_gpio;
+    lcd_backlight_active_low = doc["lcd_backlight_active_low"] | lcd_backlight_active_low;
+    clock_timezone = doc["clock_timezone"] | "MSK-3";
+    clock_ntp_server = doc["clock_ntp_server"] | "pool.ntp.org";
+
+    return true;
+}
+
+/**
+ * @brief Retrieves the current Wi-Fi SSID
+ *
+ * @return The SSID as a c style string
+ */
+auto ConfigManager::getSSID() const -> const char* { return ssid.c_str(); }
+
+/**
+ * @brief Retrieves the current Wi-Fi password
+ *
+ * @return The password as a c style string
+ */
+auto ConfigManager::getPassword() const -> const char* { return password.c_str(); }
+
+/**
+ * @brief Returns the current status of the LCD enable flag
+ *
+ * @return true if the LCD is enabled false otherwise
+ */
+auto ConfigManager::getLCDEnable() const -> bool { return lcd_enable; }
+
+/**
+ * @brief Retrieves the LCD width
+ *
+ * @return The width of the LCD in pixels
+ */
+auto ConfigManager::getLCDWidth() const -> int16_t { return lcd_w; }
+/**
+ * @brief Retrieves the LCD height
+ *
+ * @return The height of the LCD in pixels
+ */
+auto ConfigManager::getLCDHeight() const -> int16_t { return lcd_h; }
+/**
+ * @brief Retrieves the LCD rotation setting
+ *
+ * @return The rotation of the LCD
+ */
+auto ConfigManager::getLCDRotation() const -> uint8_t { return lcd_rotation; }
+
+/**
+ * @brief Retrieves the GPIO pin number for LCD MOSI
+ *
+ * @return The GPIO pin number for LCD MOSI
+ */
+auto ConfigManager::getLCDMosiGpio() const -> int8_t { return lcd_mosi_gpio; }
+
+/**
+ * @brief Retrieves the GPIO pin number for LCD SCK
+ *
+ * @return The GPIO pin number for LCD SCK
+ */
+auto ConfigManager::getLCDSckGpio() const -> int8_t { return lcd_sck_gpio; }
+
+/**
+ * @brief Retrieves the GPIO pin number for LCD CS
+ *
+ * @return The GPIO pin number for LCD CS
+ */
+auto ConfigManager::getLCDCsGpio() const -> int8_t { return lcd_cs_gpio; }
+
+/**
+ * @brief Retrieves the GPIO pin number for LCD DC
+ *
+ * @return The GPIO pin number for LCD DC
+ */
+auto ConfigManager::getLCDDcGpio() const -> int8_t { return lcd_dc_gpio; }
+
+/**
+ * @brief Retrieves the GPIO pin number for LCD RST
+ *
+ * @return The GPIO pin number for LCD RST
+ */
+auto ConfigManager::getLCDRstGpio() const -> int8_t { return lcd_rst_gpio; }
+
+/**
+ * @brief Returns whether the LCD CS pin is active high
+ *
+ * @return true if the LCD CS pin is active high false otherwise
+ */
+auto ConfigManager::getLCDCsActiveHigh() const -> bool { return lcd_cs_active_high; }
+/**
+ * @brief Returns whether the LCD DC pin is command high
+ *
+ * @return true if the LCD DC pin is command high false otherwise
+ */
+auto ConfigManager::getLCDDcCmdHigh() const -> bool { return lcd_dc_cmd_high; }
+
+/**
+ * @brief Retrieves the LCD SPI mode
+ *
+ * @return The SPI mode of the LCD
+ */
+auto ConfigManager::getLCDSpiMode() const -> uint8_t { return lcd_spi_mode; }
+
+/**
+ * @brief Returns whether the LCD CS pin is kept asserted
+ *
+ * @return true if the LCD CS pin is kept asserted false otherwise
+ */
+auto ConfigManager::getLCDKeepCsAsserted() const -> bool { return lcd_keep_cs_asserted; }
+
+/**
+ * @brief Retrieves the SPI clock frequency for the LCD
+ *
+ * @return The SPI clock frequency in Hz
+ */
+auto ConfigManager::getLCDSpiHz() const -> uint32_t { return lcd_spi_hz; }
+
+/**
+ * @brief Retrieves the GPIO pin number for the LCD backlight
+ *
+ * @return The GPIO pin number for the LCD backlight
+ */
+auto ConfigManager::getLCDBacklightGpio() const -> int8_t { return lcd_backlight_gpio; }
+
+/**
+ * @brief Returns whether the LCD backlight pin is active low
+ *
+ * @return true if the LCD backlight pin is active low false otherwise
+ */
+auto ConfigManager::getLCDBacklightActiveLow() const -> bool { return lcd_backlight_active_low; }
+
+/**
+ * @brief Set WiFi credentials in memory
+ * @param newSsid The SSID
+ * @param newPassword The password
+ *
+ * @return void
+ */
+auto ConfigManager::setWiFi(const char* newSsid, const char* newPassword) -> void {
+    if (newSsid != nullptr) {
+        ssid = newSsid;
+    }
+    if (newPassword != nullptr) {
+        password = newPassword;
+    }
+}
+
+/**
+ * @brief Save the current configuration to the file
+ *
+ * @return true if the configuration was successfully saved false otherwise
+ */
+auto ConfigManager::save() -> bool {
+    if (!LittleFS.begin()) {
+        Logger::error("Failed to mount LittleFS", "ConfigManager");
+
+        return false;
+    }
+
+    const String temporary = String(filename.c_str()) + ".tmp";
+    File file = LittleFS.open(temporary, "w");
+
+    if (!file) {
+        Logger::error("Failed to open config file for writing", "ConfigManager");
+
+        return false;
+    }
+
+    JsonDocument doc;
+
+    doc["wifi_ssid"] = ssid.c_str();
+    doc["wifi_password"] = password.c_str();
+    doc["lcd_enable"] = lcd_enable;
+    doc["lcd_w"] = lcd_w;
+    doc["lcd_h"] = lcd_h;
+    doc["lcd_rotation"] = lcd_rotation;
+    doc["lcd_mosi_gpio"] = lcd_mosi_gpio;
+    doc["lcd_sck_gpio"] = lcd_sck_gpio;
+    doc["lcd_cs_gpio"] = lcd_cs_gpio;
+    doc["lcd_dc_gpio"] = lcd_dc_gpio;
+    doc["lcd_rst_gpio"] = lcd_rst_gpio;
+    doc["lcd_cs_active_high"] = lcd_cs_active_high;
+    doc["lcd_dc_cmd_high"] = lcd_dc_cmd_high;
+    doc["lcd_spi_mode"] = lcd_spi_mode;
+    doc["lcd_keep_cs_asserted"] = lcd_keep_cs_asserted;
+    doc["lcd_spi_hz"] = lcd_spi_hz;
+    doc["lcd_backlight_gpio"] = lcd_backlight_gpio;
+    doc["lcd_backlight_active_low"] = lcd_backlight_active_low;
+    doc["clock_timezone"] = clock_timezone.c_str();
+    doc["clock_ntp_server"] = clock_ntp_server.c_str();
+
+    if (serializeJson(doc, file) != measureJson(doc)) {
+        Logger::error("Failed to write config file", "ConfigManager");
+        file.close();
+
+        return false;
+    }
+
+    file.close();
+    if (!LittleFS.rename(temporary, filename.c_str())) {
+        Logger::error("Failed to replace config file", "ConfigManager");
+        return false;
+    }
+    Logger::info("Configuration saved", "ConfigManager");
+
+    return true;
+}
